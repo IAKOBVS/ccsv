@@ -82,6 +82,4 @@ ERROR:
 
 int main()
 {
-	struct Data data;
-	dataInit(&data, 10, 10, 10);
 }
