@@ -32,7 +32,7 @@ struct Data {
 void dataFree(struct Data *data)
 {
 	for ( ; data->recordsQ > -1; --data->recordsQ) {
-		for (size_t iV = 0; iV < data->records->valuesQ; ++iV)
+		for (size_t iV = data->records->valuesQ; iV > -1; --iV)
 			free(data->records[data->recordsQ].values[iV].value);
 		free(data->records[data->recordsQ].values);
 	}
