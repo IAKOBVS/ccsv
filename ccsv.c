@@ -7,9 +7,9 @@
 #include "/home/james/c/jArray/jarr.h"
 #include "/home/james/c/jString/jstr.h"
 
-#define FILENAME "/home/james/.local/bin/nix-db/db/data/upah-tukang_pryk-ns-lk.tsv"
+#define FILENAME "/tmp/stocks-nix/Balancepos20230131.txt"
 
-#define MIN_STR_LEN 128
+#define MIN_STR_LEN 256
 
 #if (defined(__GNUC__) && (__GNUC__ >= 3)) || (defined(__clang__) && __has_builtin(__builtin_expect))
   #define likely(x) __builtin_expect(!!(x), 1)
@@ -43,7 +43,7 @@ struct Data {
 	size_t recordsQ;
 };
 
-void dataFree(struct Data *data)
+void dataDel(struct Data *data)
 {
 	for ( ; data->recordsQ > -1; --data->recordsQ) {
 		for (size_t iV = data->records->valuesQ; iV > -1; --iV)
@@ -57,7 +57,7 @@ void dataFree(struct Data *data)
 	perror("");
 }
 
-int dataInit(struct Data *data, size_t keysQ, size_t recordsQ, size_t valuesQ)
+int dataNew(struct Data *data, size_t keysQ, size_t recordsQ, size_t valuesQ)
 {
 	data->keysQ = 0;
 	data->recordsQ = 0;
@@ -86,15 +86,52 @@ int dataInit(struct Data *data, size_t keysQ, size_t recordsQ, size_t valuesQ)
 	return 1;
 
 ERROR_FREE:
-	dataFree(data);
+	dataDel(data);
 ERROR:
 	perror("");
 	return 0;
 }
 
-#define DELIM ","
-
 char *strtok_r(char *restrict s, const char *restrict delim, char **restrict save_ptr);
+
+int dataLoad(struct Data *data, char src[], char *delim)
+{
+	size_t lines = nixWcNl(src);
+	data->recordsQ = lines;
+	size_t values = nixWcWordTilNlComma(src);
+	data->keysQ = values;
+	dataNew(data, values, lines, values);
+	char *savePtr = src;
+	for (size_t iV = 0; iV < values; ++iV)
+		data->keys[iV].key = strtok_r(savePtr, delim, &savePtr);
+	for (size_t iL = 1; iL < lines; ++iL)
+		for (size_t iV = 0; iV < values; ++iV)
+			data->records[iL].values[iV].value = strtok_r(savePtr, delim, &savePtr);
+	return 1;
+}
+
+static inline void dataPrintAll(struct Data *data)
+{
+	size_t values = data->keysQ;
+	for (size_t iV = 0; iV < values; ++iV)
+		puts(data->keys[iV].key);
+	for (size_t iL = 1, lines = data->recordsQ; iL < lines; ++iL)
+		for (size_t iV = 0; iV < values; ++iV)
+			puts(data->records[iL].values[iV].value);
+}
+
+static inline void dataPrintKeys(struct Data *data)
+{
+	for (size_t iV = 0, values = data->keysQ; iV < values; ++iV)
+		puts(data->keys[iV].key);
+}
+
+static inline void dataPrintRecords(struct Data *data)
+{
+	for (size_t iL = 1, lines = data->recordsQ, values = data->keysQ; iL < lines; ++iL)
+		for (size_t iV = 0; iV < values; ++iV)
+			puts(data->records[iL].values[iV].value);
+}
 
 int main()
 {
@@ -102,13 +139,5 @@ int main()
 	size_t fileSize = nixSizeOfFile(FILENAME);
 	char buf[fileSize];
 	nixCat(FILENAME, fileSize, buf);
-	size_t lines = nixWcNl(buf);
-	size_t values = nixWcWordTilNlComma(buf);
-	char *savePtr = buf;
-	dataInit(&data, values, lines, values);
-	for (size_t iL = 0; iL < lines; ++iL) {
-		for (size_t iV = 0; iV < values; ++iV) {
-			data.records[iL].values[iV].value = strtok_r(savePtr, DELIM, &savePtr);
-		}
-	}
+	dataLoad(&data, buf, "|'\n'");
 }
