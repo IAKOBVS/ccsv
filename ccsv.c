@@ -19,6 +19,8 @@
   #define unlikely(x) (x)
 #endif
 
+#define dataPrintf(...) setvbuf(stdout, NULL, _IONBF, 0), printf(__VA_ARGS__)
+
 struct Value {
 	char *value;
 	size_t valueLen;
@@ -94,19 +96,39 @@ ERROR:
 
 char *strtok_r(char *restrict s, const char *restrict delim, char **restrict save_ptr);
 
-int dataLoad(struct Data *data, char src[], char *delim)
+static inline size_t dataDelim(char *src, char delim)
+{
+	switch (delim) {
+	case '|':
+		return nixWcWordTilNlPipe(src);
+	case ',':
+		return nixWcWordTilNlComma(src);
+	case '.':
+		return nixWcWordTilNlDot(src);
+	case '"':
+		return nixWcWordTilNlDoubleQuote(src);
+	case '\'':
+		return nixWcWordTilNlQuote(src);
+	case '\t':
+		return nixWcWordTilNlTab(src);
+	}
+	return 0;
+}
+
+int dataLoad(struct Data *data, char src[], char delim)
 {
 	size_t lines = nixWcNl(src);
 	data->recordsQ = lines;
-	size_t values = nixWcWordTilNlComma(src);
+	size_t values = nixWcWordTilNlPipe(src);
 	data->keysQ = values;
 	dataNew(data, values, lines, values);
 	char *savePtr = src;
+	char delimNl[] = {delim, '\n'};
 	for (size_t iV = 0; iV < values; ++iV)
-		data->keys[iV].key = strtok_r(savePtr, delim, &savePtr);
+		data->keys[iV].key = strtok_r(savePtr, delimNl, &savePtr);
 	for (size_t iL = 1; iL < lines; ++iL)
 		for (size_t iV = 0; iV < values; ++iV)
-			data->records[iL].values[iV].value = strtok_r(savePtr, delim, &savePtr);
+			data->records[iL].values[iV].value = strtok_r(savePtr, delimNl, &savePtr);
 	return 1;
 }
 
@@ -114,23 +136,23 @@ static inline void dataPrintAll(struct Data *data)
 {
 	size_t values = data->keysQ;
 	for (size_t iV = 0; iV < values; ++iV)
-		puts(data->keys[iV].key);
+		dataPrintf("%s ", data->keys[iV].key);
 	for (size_t iL = 1, lines = data->recordsQ; iL < lines; ++iL)
 		for (size_t iV = 0; iV < values; ++iV)
-			puts(data->records[iL].values[iV].value);
+			dataPrintf("%s\n", data->records[iL].values[iV].value);
 }
 
 static inline void dataPrintKeys(struct Data *data)
 {
 	for (size_t iV = 0, values = data->keysQ; iV < values; ++iV)
-		puts(data->keys[iV].key);
+		dataPrintf("%s ", data->keys[iV].key);
 }
 
 static inline void dataPrintRecords(struct Data *data)
 {
 	for (size_t iL = 1, lines = data->recordsQ, values = data->keysQ; iL < lines; ++iL)
 		for (size_t iV = 0; iV < values; ++iV)
-			puts(data->records[iL].values[iV].value);
+			dataPrintf("%s ", data->records[iL].values[iV].value);
 }
 
 int main()
@@ -139,5 +161,9 @@ int main()
 	size_t fileSize = nixSizeOfFile(FILENAME);
 	char buf[fileSize];
 	nixCat(FILENAME, fileSize, buf);
-	dataLoad(&data, buf, "|'\n'");
+	dataLoad(&data, buf, '|');
+
+	/* dataPrintAll(&data); */
+	dataPrintKeys(&data);
+	/* dataPrintRecords(&data); */
 }
