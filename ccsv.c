@@ -1,7 +1,13 @@
 #include <stdio.h>
-#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
+
+#include "/home/james/c/nix.c/nix.h"
+#include "/home/james/c/jArray/jarr.h"
+#include "/home/james/c/jString/jstr.h"
+
+#define FILENAME "/home/james/.local/bin/nix-db/db/data/upah-tukang_pryk-ns-lk.tsv"
 
 #define MIN_STR_LEN 128
 
@@ -86,7 +92,23 @@ ERROR:
 	return 0;
 }
 
+#define DELIM ","
+
+char *strtok_r(char *restrict s, const char *restrict delim, char **restrict save_ptr);
 
 int main()
 {
+	struct Data data;
+	size_t fileSize = nixSizeOfFile(FILENAME);
+	char buf[fileSize];
+	nixCat(FILENAME, fileSize, buf);
+	size_t lines = nixWcNl(buf);
+	size_t values = nixWcWordTilNlComma(buf);
+	char *savePtr = buf;
+	dataInit(&data, values, lines, values);
+	for (size_t iL = 0; iL < lines; ++iL) {
+		for (size_t iV = 0; iV < values; ++iV) {
+			data.records[iL].values[iV].value = strtok_r(savePtr, DELIM, &savePtr);
+		}
+	}
 }
