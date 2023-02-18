@@ -19,8 +19,6 @@
   #define unlikely(x) (x)
 #endif
 
-#define dataPrintf(...) setvbuf(stdout, NULL, _IONBF, 0), printf(__VA_ARGS__)
-
 struct Value {
 	char *value;
 	size_t valueLen;
@@ -118,9 +116,7 @@ static inline size_t dataDelim(char *src, char delim)
 int dataLoad(struct Data *data, char src[], char delim)
 {
 	size_t lines = nixWcNl(src);
-	data->recordsQ = lines;
 	size_t values = nixWcWordTilNlPipe(src);
-	data->keysQ = values;
 	dataNew(data, values, lines, values);
 	char *savePtr = src;
 	char delimNl[] = {delim, '\n'};
@@ -136,23 +132,23 @@ static inline void dataPrintAll(struct Data *data)
 {
 	size_t values = data->keysQ;
 	for (size_t iV = 0; iV < values; ++iV)
-		dataPrintf("%s ", data->keys[iV].key);
+		printf("%s\n", data->keys[iV].key);
 	for (size_t iL = 1, lines = data->recordsQ; iL < lines; ++iL)
 		for (size_t iV = 0; iV < values; ++iV)
-			dataPrintf("%s\n", data->records[iL].values[iV].value);
+			printf("%s\n", data->records[iL].values[iV].value);
 }
 
 static inline void dataPrintKeys(struct Data *data)
 {
 	for (size_t iV = 0, values = data->keysQ; iV < values; ++iV)
-		dataPrintf("%s ", data->keys[iV].key);
+		printf("%s\n", data->keys[iV].key);
 }
 
 static inline void dataPrintRecords(struct Data *data)
 {
 	for (size_t iL = 1, lines = data->recordsQ, values = data->keysQ; iL < lines; ++iL)
 		for (size_t iV = 0; iV < values; ++iV)
-			dataPrintf("%s ", data->records[iL].values[iV].value);
+			printf("%s\n", data->records[iL].values[iV].value);
 }
 
 int main()
@@ -164,6 +160,13 @@ int main()
 	dataLoad(&data, buf, '|');
 
 	/* dataPrintAll(&data); */
-	dataPrintKeys(&data);
+	/* dataPrintKeys(&data); */
 	/* dataPrintRecords(&data); */
+
+	/* char inBuf[1024]; */
+	/* inBuf[1023] = '\0'; */
+	/* for (;;) { */
+	/* 	fgets(inBuf, 1023, stdin); */
+	/* 	puts(inBuf); */
+	/* } */
 }
