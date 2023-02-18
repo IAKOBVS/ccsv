@@ -5,6 +5,14 @@
 
 #define MIN_STR_LEN 128
 
+#if (defined(__GNUC__) && (__GNUC__ >= 3)) || (defined(__clang__) && __has_builtin(__builtin_expect))
+  #define likely(x) __builtin_expect(!!(x), 1)
+  #define unlikely(x) __builtin_expect(!!(x), 0)
+#else
+  #define likely(x) (x)
+  #define unlikely(x) (x)
+#endif
+
 struct Value {
 	char *value;
 	size_t valueLen;
@@ -47,25 +55,24 @@ int dataInit(struct Data *data, size_t keysQ, size_t recordsQ, size_t valuesQ)
 {
 	data->keysQ = 0;
 	data->recordsQ = 0;
-	if ((data->records = malloc(recordsQ * sizeof(struct Record))));
-	else
+	if (unlikely(!(data->records = malloc(recordsQ * sizeof(struct Record)))))
 		goto ERROR;
 	data->records->valuesQ = 0;
-	if ((data->keys = malloc(keysQ * sizeof(struct Key))));
-	else goto ERROR_FREE;
+	if (unlikely(!(data->keys = malloc(keysQ * sizeof(struct Key)))))
+		goto ERROR_FREE;
 	for ( ; data->keysQ < keysQ; ++data->keysQ) {
-		if ((data->keys[data->keysQ].key = malloc(MIN_STR_LEN)));
-		else goto ERROR_FREE;
+		if (unlikely(!(data->keys[data->keysQ].key = malloc(MIN_STR_LEN))))
+			goto ERROR_FREE;
 		data->keys[data->keysQ].keySize = MIN_STR_LEN;
 		data->keys[data->keysQ].keyLen = 0;
 	}
 	for ( ; data->recordsQ < recordsQ; ++data->recordsQ) {
-		if ((data->records[data->recordsQ].values = malloc(valuesQ * sizeof(struct Value))));
-		else goto ERROR_FREE;
+		if (unlikely(!(data->records[data->recordsQ].values = malloc(valuesQ * sizeof(struct Value)))))
+			goto ERROR_FREE;
 		data->records[data->recordsQ].valuesQ = valuesQ;
 		for ( ; data->records->valuesQ < valuesQ; ++data->records->valuesQ) {
-			if ((data->records[data->recordsQ].values[data->records->valuesQ].value = malloc(MIN_STR_LEN)));
-			else goto ERROR_FREE;
+			if (unlikely(!(data->records[data->recordsQ].values[data->records->valuesQ].value = malloc(MIN_STR_LEN))))
+				goto ERROR_FREE;
 			data->records[data->recordsQ].values[data->records->valuesQ].valueSize = MIN_STR_LEN;
 			data->records[data->recordsQ].values[data->records->valuesQ].valueLen = 0;
 		}
