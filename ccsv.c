@@ -92,8 +92,6 @@ ERROR:
 	return 0;
 }
 
-char *strtok_r(char *restrict s, const char *restrict delim, char **restrict save_ptr);
-
 static inline size_t dataDelim(char *src, char delim)
 {
 	switch (delim) {
@@ -156,7 +154,7 @@ int main()
 	struct Data data;
 	size_t fileSize = nixSizeOfFile(FILENAME);
 	char buf[fileSize];
-	nixCat(FILENAME, fileSize, buf);
+	nixCat(buf, FILENAME, fileSize);
 	dataLoad(&data, buf, '|');
 
 	/* dataPrintAll(&data); */
@@ -169,4 +167,7 @@ int main()
 	/* 	fgets(inBuf, 1023, stdin); */
 	/* 	puts(inBuf); */
 	/* } */
+
+	dataDel(&data);
+	return 0;
 }
