@@ -8,6 +8,7 @@
 #include "/home/james/c/jString/jstr.h"
 
 #define FILENAME "/tmp/stocks-nix/Balancepos20230131.txt"
+#define KJV_FILE "/home/james/.local/src/kjv/kjv.tsv"
 
 #define MIN_STR_LEN 256
 
@@ -114,7 +115,7 @@ static inline size_t dataDelim(char *src, char delim)
 int dataLoad(struct Data *data, char src[], char delim)
 {
 	size_t lines = nixWcNl(src);
-	size_t values = nixWcWordTilNlPipe(src);
+	size_t values = dataDelim(src, delim);
 	dataNew(data, values, lines, values);
 	char *savePtr = src;
 	char delimNl[] = {delim, '\n'};
@@ -152,22 +153,12 @@ static inline void dataPrintRecords(struct Data *data)
 int main()
 {
 	struct Data data;
-	size_t fileSize = nixSizeOfFile(FILENAME);
+	size_t fileSize = nixSizeOfFile(KJV_FILE);
 	char buf[fileSize];
-	nixCat(buf, FILENAME, fileSize);
-	dataLoad(&data, buf, '|');
+	nixCat(buf, KJV_FILE, fileSize);
+	dataLoad(&data, buf, '\t');
+	dataPrintAll(&data);
 
-	/* dataPrintAll(&data); */
-	/* dataPrintKeys(&data); */
-	/* dataPrintRecords(&data); */
-
-	/* char inBuf[1024]; */
-	/* inBuf[1023] = '\0'; */
-	/* for (;;) { */
-	/* 	fgets(inBuf, 1023, stdin); */
-	/* 	puts(inBuf); */
-	/* } */
-
-	dataDel(&data);
+	/* dataDel(&data); */
 	return 0;
 }
